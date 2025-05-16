@@ -28,7 +28,7 @@ class Bot(commands.Bot):
     # async def event_message(self, message):
     #     await self.handle_commands(message)
 
-    @commands.command(name='form')
+    @commands.command(name='report')
     async def form(self, ctx: commands.Context):
         content = ctx.message.content
         if not content:
