@@ -10,7 +10,7 @@ TWITCH_CLIENT_ID = 'p063h8nr6c7i7w8zcn96489x6e26pv' # Бот dev.twitch
 TWITCH_ACCESS_TOKEN = os.environ['token']  # token twitch 
 BROADCASTER_ID = os.environ['id']     # ID twitch
 DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1373030292209664030/dcqLOg8MCQpNlS2o6OiLjt9FffXpGSCPc0zj2T5Hq2EPcSdAIKz0sGGqywuKGxXSf3ua'
-channel_view = os.environ['channel_suspect']
+CHANNEL_VIEW = os.environ['channel_suspect']
 
 class Bot(commands.Bot):
 
@@ -53,7 +53,7 @@ class Bot(commands.Bot):
 
         # Подготовка текста для Discord
         MEDIA_name = os.environ['MEDIA_name']
-        discord_content = f"<@244135967378767872>\n```<@&697172798845485137> <@&697172317872324648>\n{MEDIA_name}\n{form_id}\n{reason}\n{clip_url}```"
+        discord_content = f"<@244135967378767872>\n```{MEDIA_name}\n{form_id}\n{reason}\n{clip_url}\n<@&697172798845485137> <@&697172317872324648>```"
 
         # Отправка Webhook
         try:
