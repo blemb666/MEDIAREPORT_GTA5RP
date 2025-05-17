@@ -37,7 +37,7 @@ class Bot(commands.Bot):
 
         parts = content.split(' ', 2)
         if len(parts) < 3:
-            await ctx.reply("Неверный формат. Используй: !form {id,id,id} {reason}")
+            await ctx.reply("Неверный формат. Используй: !report {id,id,id} {reason}")
             return
 
         form_id = parts[1]
@@ -52,7 +52,7 @@ class Bot(commands.Bot):
         await ctx.reply("Жалоба зарегистрирована.")
 
         # Подготовка текста для Discord
-        MEDIA_name = os.environ['median_name']
+        MEDIA_name = os.environ['MEDIA_name']
         discord_content = f"<@244135967378767872>\n```<@&697172798845485137> <@&697172317872324648>\n{MEDIA_name}\n{form_id}\n{reason}\n{clip_url}```"
 
         # Отправка Webhook
