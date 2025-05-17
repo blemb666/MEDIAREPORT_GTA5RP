@@ -19,7 +19,7 @@ class Bot(commands.Bot):
             token=TWITCH_ACCESS_TOKEN,
             client_id=TWITCH_CLIENT_ID,
             prefix='!',
-            initial_channels=[channel_view]  # без #
+            initial_channels=[CHANNEL_VIEW]  # без #
         )
 
     async def event_ready(self):
