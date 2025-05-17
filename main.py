@@ -37,7 +37,7 @@ class Bot(commands.Bot):
 
         parts = content.split(' ', 2)
         if len(parts) < 3:
-            await ctx.reply("Неверный формат. Используй: !form {id} {reason}")
+            await ctx.reply("Неверный формат. Используй: !form {id,id,id} {reason}")
             return
 
         form_id = parts[1]
