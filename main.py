@@ -53,7 +53,7 @@ class Bot(commands.Bot):
 
         # Подготовка текста для Discord
         MEDIA_name = os.environ['MEDIA_name']
-        discord_content = f"<@244135967378767872>\n```{MEDIA_name}\n{form_id}\n{reason}\n{clip_url}\n<@&697172798845485137> <@&697172317872324648>```"
+        discord_content = f"<@244135967378767872>\n```{MEDIA_name}\n{form_id} - {reason}\n{clip_url}\n<@&697172798845485137> <@&697172317872324648>```"
 
         # Отправка Webhook
         try:
