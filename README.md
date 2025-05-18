@@ -1,6 +1,9 @@
 # GTA5RP Media Report
-[![Anurag's GitHub stats](https://github-readme-stats.vercel.app/api?username=blemb666)](https://github.com/anuraghazra/github-readme-stats)
+## Описание
+!report {id} {reason} - в чат твича
+Отчет отправляется через вебхук в дискорд (only Rainbow)
 
+## Установка через Dockerfile
 Dockerfile
 ```
 FROM python
