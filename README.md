@@ -9,15 +9,23 @@ Dockerfile
 FROM python
 # Аргумент, чтобы избежать кэширования git clone
 ARG CACHEBUST=1
-# Клонирование репозитория
 RUN git clone "https://github.com/blemb666/MEDIAREPORT_GTA5RP.git"
 ENV MEDIA_name="?"
-ENV token="?" 
+ENV token="?"
+# token = https://id.twitch.tv/oauth2/authorize?client_id=p063h8nr6c7i7w8zcn96489x6e26pv&redirect_uri=http://localhost&response_type=token&scope=clips:edit%20channel:moderate%20chat:edit%20chat:read%20moderation:read%20moderator:manage:announcements%20user:edit%20user:read:email%20user:read:follows%20channel:manage:broadcast%20channel:manage:videos
 ENV id="?"
+# id = https://www.streamweasels.com/tools/convert-twitch-username-%20to-user-id/
 ENV channel_suspect="?"
+# channel_suspect = TWITCH_CHANNEL
 ENV webhook_discord="?"
 RUN pip install --no-cache-dir requests
 RUN pip install --no-cache-dir twitchio
 WORKDIR /MEDIAREPORT_GTA5RP
 CMD ["python3", "main.py"]
+```
+## Commands for build
+```docker
+docker build -t mediareport .
+
+docker run -d --restart=always --no-cache mediareport
 ```
