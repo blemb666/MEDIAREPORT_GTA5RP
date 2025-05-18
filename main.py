@@ -9,7 +9,7 @@ import os
 TWITCH_CLIENT_ID = 'p063h8nr6c7i7w8zcn96489x6e26pv' # Бот dev.twitch
 TWITCH_ACCESS_TOKEN = os.environ['token']  # token twitch 
 BROADCASTER_ID = os.environ['id']     # ID twitch
-DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1373030292209664030/dcqLOg8MCQpNlS2o6OiLjt9FffXpGSCPc0zj2T5Hq2EPcSdAIKz0sGGqywuKGxXSf3ua'
+DISCORD_WEBHOOK_URL = os.environ['webhook_discord']
 CHANNEL_VIEW = os.environ['channel_suspect']
 
 class Bot(commands.Bot):
