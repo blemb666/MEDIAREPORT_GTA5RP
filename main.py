@@ -12,6 +12,7 @@ BROADCASTER_ID = os.environ['id']     # ID twitch
 DISCORD_WEBHOOK_URL = os.environ['webhook_discord']
 CHANNEL_VIEW = os.environ['channel_suspect']
 
+
 class Bot(commands.Bot):
 
     def __init__(self):
@@ -24,6 +25,7 @@ class Bot(commands.Bot):
 
     async def event_ready(self):
         print(f'✅ Бот запущен как {self.nick}')
+        print(f'🔗 Подключен к каналу: {self.connected_channels}')  # Проверка каналов
 
     # async def event_message(self, message):
     #     await self.handle_commands(message)
@@ -50,6 +52,9 @@ class Bot(commands.Bot):
 
         # Отправка сообщения в Twitch
         await ctx.reply("Жалоба зарегистрирована.")
+        print(f"Команда получена: {ctx.message.content}")  # В начале метода form()
+        print(f"Clip URL: {clip_url}")  # После создания клипа
+        print(f"Discord content: {discord_content}")  # Перед отправкой вебхука
 
         # Подготовка текста для Discord
         MEDIA_name = os.environ['MEDIA_name']
@@ -84,5 +89,7 @@ class Bot(commands.Bot):
         return None
 
 # 🔁 Запуск
+
 bot = Bot()
+
 bot.run()
