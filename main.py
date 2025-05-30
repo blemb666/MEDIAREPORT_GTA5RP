@@ -92,5 +92,4 @@ class Bot(commands.Bot):
 
 # Запуск бота
 bot = Bot()
-
 bot.run()
