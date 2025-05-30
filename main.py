@@ -56,7 +56,7 @@ class Bot(commands.Bot):
         print(f"Clip URL: {clip_url}")  # После создания клипа
 
         # Подготовка текста для Discord
-        discord_content = f"<@244135967378767872> <#690851125511061515>\n```{MEDIA_name}\n{form_id} - {reason}\n{clip_url}\n<@&697172798845485137> <@&697172317872324648>```"
+        discord_content = f"<@244135967378767872> <#690851125511061515>\n```{MEDIA_name}\n{form_id} - {reason}\n{clip_url}\n<@&697172798845485137> <@&697172317872324648>```\n-#message by {ctx.author}"
 
         # Отправка Webhook
         try:
