@@ -87,10 +87,10 @@ class Bot(commands.Bot):
         return None
 
 # 🔁 Запуск
-@commands.command(name='test')
-async def form(self, ctx: commands.Context):
-    content = ctx.message.content
-    await ctx.reply(f"{ctx.author.mention} - {content}")
+    @commands.command(name='test')
+    async def form(self, ctx: commands.Context):
+        content = ctx.message.content
+        await ctx.reply(f"{ctx.author.mention} - {content}")
 
 bot = Bot()
 
