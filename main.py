@@ -56,7 +56,7 @@ class Bot(commands.Bot):
         print(f"Clip URL: {clip_url}")  # После создания клипа
 
         # Подготовка текста для Discord
-        discord_content = f"<@244135967378767872> <#690851125511061515>\n```{MEDIA_name}\n{form_id} - {reason}\n{clip_url}\n<@&697172798845485137> <@&697172317872324648>```\n-#message by {ctx.author}"
+        discord_content = f"<@244135967378767872> <#690851125511061515>\n```{MEDIA_name}\n{form_id} - {reason}\n{clip_url}\n<@&697172798845485137> <@&697172317872324648>```\n-#message by {ctx.author.mention}"
 
         # Отправка Webhook
         try:
@@ -85,13 +85,12 @@ class Bot(commands.Bot):
 
         print("Ошибка создания клипа:", response.text)
         return None
-
-# 🔁 Запуск
-    @commands.command(name='test')
+    @commands.command(name='ping')
     async def form(self, ctx: commands.Context):
         content = ctx.message.content
-        await ctx.reply(f"{ctx.author.mention} - {content}")
+        await ctx.reply(f"{ctx.author.mention} - pong!")
 
+# Запуск бота
 bot = Bot()
 
 bot.run()
