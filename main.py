@@ -32,7 +32,6 @@ class Bot(commands.Bot):
 
     @commands.command(name='report')
     async def form(self, ctx: commands.Context):
-        print(f"Running by: {ctx.author}")  # В начале метода form()
         content = ctx.message.content
         if not content:
             await ctx.reply("Ошибка: пустое сообщение.")
@@ -88,6 +87,10 @@ class Bot(commands.Bot):
         return None
 
 # 🔁 Запуск
+@commands.command(name='test')
+async def form(self, ctx: commands.Context):
+    content = ctx.message.content
+    await ctx.reply(f"{ctx.author.mention} - {content}")
 
 bot = Bot()
 
