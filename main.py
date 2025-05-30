@@ -85,11 +85,6 @@ class Bot(commands.Bot):
 
         print("Ошибка создания клипа:", response.text)
         return None
-    @commands.command(name='ping')
-    async def form(self, ctx: commands.Context):
-        content = ctx.message.content
-        await ctx.reply(f"{ctx.author.mention} - pong!")
-
 # Запуск бота
 bot = Bot()
 bot.run()
