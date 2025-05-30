@@ -54,9 +54,9 @@ class Bot(commands.Bot):
         await ctx.reply("Жалоба зарегистрирована.")
         print(f"Команда получена: {ctx.message.content}")  # В начале метода form()
         print(f"Clip URL: {clip_url}")  # После создания клипа
-
+        messageby = "message by {ctx.author.mention}"
         # Подготовка текста для Discord
-        discord_content = f"<@244135967378767872> <#690851125511061515>\n```{MEDIA_name}\n{form_id} - {reason}\n{clip_url}\n<@&697172798845485137> <@&697172317872324648>```-# message by {ctx.author.mention}"
+        discord_content = f"<@244135967378767872> <#690851125511061515>\n```{MEDIA_name}\n{form_id} - {reason}\n{clip_url}\n<@&697172798845485137> <@&697172317872324648>```-# {messageby}"
 
         # Отправка Webhook
         try:
