@@ -27,8 +27,8 @@ class Bot(commands.Bot):
     async def event_ready(self):
         print(f'✅ Бот запущен как {self.nick}')
 
-    # async def event_message(self, message):
-    #     await self.handle_commands(message)
+    async def event_message(self, message):
+        await self.handle_commands(message)
 
     @commands.command(name='report')
     async def form(self, ctx: commands.Context):
