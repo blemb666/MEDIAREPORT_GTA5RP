@@ -64,7 +64,7 @@ class Bot(commands.Bot):
         arg_parts = args_str.split(' ', 1) # Split into ID part and reason part
 
         if len(arg_parts) < 2:
-            await ctx.reply("Неверный формат. Используй: !report {id,id,id} {reason}")
+            await ctx.reply(" blemb6Cop = Ничего не произошло = blemb6Cop")
             return
 
         form_id = arg_parts[0] # This is "{id,id,id}"
