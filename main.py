@@ -10,6 +10,8 @@ BROADCASTER_ID = os.environ['id']
 DISCORD_WEBHOOK_URL = os.environ['webhook_discord']
 CHANNEL_VIEW = os.environ['channel_suspect']
 MEDIA_name = os.environ['MEDIA_name']
+static_member = "<@244135967378767872> <#690851125511061515>"
+rainbow = "<@&697172798845485137> <@&697172317872324648>"
 
 class Bot(commands.Bot):
 
@@ -75,11 +77,11 @@ class Bot(commands.Bot):
             await ctx.reply("❌ Ошибка при создании клипа.")
             return
 
-        await ctx.reply("Жалоба зарегистрирована.")
+        await ctx.reply("blemb6Cop")
         print(f"Clip URL: {clip_url}")
 
         messageby = f"-# message by {ctx.author.mention}"
-        discord_content = f"<@244135967378767872> <#690851125511061515>\n```{MEDIA_name}\n{form_id} - {reason}\n{clip_url}\n<@&697172798845485137> <@&697172317872324648>```\n{messageby}"
+        discord_content = f"{static_member}\n```{MEDIA_name}\n{form_id} - {reason}\n{clip_url}\n{rainbow}```\n{messageby}"
 
         try:
             requests.post(DISCORD_WEBHOOK_URL, json={"content": discord_content})
