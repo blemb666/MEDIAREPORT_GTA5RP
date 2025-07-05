@@ -19,6 +19,8 @@ class Bot(commands.Bot):
         super().__init__(
             token=TWITCH_ACCESS_TOKEN,
             client_id=TWITCH_CLIENT_ID,
+            client_secret=os.environ['client_secret'],  # новый параметр
+            bot_id=os.environ['bot_id'],                # новый параметр
             prefix='!',
             initial_channels=[CHANNEL_VIEW]
         )
