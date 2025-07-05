@@ -26,7 +26,7 @@ class Bot(commands.Bot):
         )
 
     async def event_ready(self):
-        print(f'✅ Бот запущен как {self.nick}')
+        print(f'✅ Бот запущен как {self._user.name}')
         print(f'Watching channel: {CHANNEL_VIEW}')
 
     async def event_message(self, message):
