@@ -41,7 +41,7 @@ class Bot(commands.Bot):
 
         parts_full = content.split(' ', 1)
         if len(parts_full) < 2:
-            await ctx.reply("Неверный формат. Используй: !report {id,id,id} {reason}")
+            await ctx.reply("Неверный формат. Используй: !report ид причина")
             return
 
         args_str = parts_full[1]
