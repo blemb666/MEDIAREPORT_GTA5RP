@@ -1,109 +1,99 @@
 import discord
-from discord.ext import commands, tasks
+from discord.ext import commands
 import json
 import os
 
-DB_PATH = 'db.json'
-ADMIN_ROLE_ID = 1373048899278995496
-MEDIA_name = os.environ.get("MEDIA_name", "Solana Fliper")
+MEDIA_name = os.environ.get('MEDIA_name', 'DefaultMedia')
+role_id = os.environ.get('role_id', None)
+logs_channel_id = None  # Устанавливается командой /channel_logs
 
 intents = discord.Intents.default()
 intents.message_content = True
-intents.guilds = True
-intents.members = True
 intents.reactions = True
 
-bot = commands.Bot(command_prefix="!", intents=intents)
+bot = commands.Bot(command_prefix='/', intents=intents)
+
+db_path = 'db.json'
 
 def load_db():
-    if not os.path.exists(DB_PATH):
-        return {}
-    with open(DB_PATH, 'r') as f:
-        return json.load(f)
+    try:
+        with open(db_path, 'r') as f:
+            return json.load(f)
+    except Exception:
+        return {"clips": [], "MEDIA_name": MEDIA_name}
 
 def save_db(data):
-    with open(DB_PATH, 'w') as f:
+    with open(db_path, 'w') as f:
         json.dump(data, f, indent=4)
+
+db = load_db()
 
 @bot.event
 async def on_ready():
-    await bot.tree.sync()
-    check_for_clip.start()
-    print(f"✅ Discord бот запущен как {bot.user}")
+    print(f'✅ Discord бот запущен как {bot.user}')
 
-@tasks.loop(seconds=5)
-async def check_for_clip():
-    data = load_db()
-    clip = data.get("pending_clip")
-    if not clip:
-        return
+@bot.command()
+@commands.has_role(int(role_id) if role_id else 0)
+async def nickname(ctx, *, new_name: str):
+    db["MEDIA_name"] = new_name
+    save_db(db)
+    await ctx.send(f"MEDIA_name изменено на: **{new_name}**")
 
-    form_id = clip["form_id"]
-    reason = clip["reason"]
-    author = clip["author"]
-    clip_url = clip["clip_url"]
+@bot.command()
+@commands.has_role(int(role_id) if role_id else 0)
+async def channel_logs(ctx, channel: discord.TextChannel):
+    global logs_channel_id
+    logs_channel_id = channel.id
+    await ctx.send(f"Канал для логов установлен: {channel.mention}")
 
-    guild = bot.guilds[0]
-    log_channel = None
-    for ch in guild.text_channels:
-        if ch.permissions_for(guild.me).send_messages:
-            log_channel = ch
-            break
-
-    if log_channel:
-        msg = await log_channel.send(
-            f"```{MEDIA_name}
-{form_id} - {reason}
-{clip_url}```
-📨 by {author}"
-        )
-        await msg.add_reaction("✏️")
-        data["last_msg_id"] = msg.id
-        data["last_msg_channel"] = log_channel.id
-        data.pop("pending_clip", None)
-        save_db(data)
+@bot.event
+async def on_message(message):
+    await bot.process_commands(message)
 
 @bot.event
 async def on_raw_reaction_add(payload):
-    if str(payload.emoji) != "✏️" or payload.user_id == bot.user.id:
+    if payload.emoji.name != '✏️':
         return
 
-    guild = bot.get_guild(payload.guild_id)
-    member = guild.get_member(payload.user_id)
-    if not member or ADMIN_ROLE_ID not in [r.id for r in member.roles]:
+    if payload.user_id == bot.user.id:
+        return
+
+    if not logs_channel_id:
         return
 
     channel = bot.get_channel(payload.channel_id)
     message = await channel.fetch_message(payload.message_id)
+    if message.author != bot.user:
+        return
 
+    # Логика редактирования причины клипа
     def check(m):
-        return m.author.id == payload.user_id and m.channel.id == payload.channel_id
+        return m.author.id == payload.user_id and m.channel.id == channel.id
 
-    await channel.send(f"{member.mention}, введи новое описание:")
+    await channel.send(f"<@{payload.user_id}>, напишите новую причину:")
 
     try:
-        msg = await bot.wait_for("message", timeout=60.0, check=check)
-        lines = message.content.splitlines()
-        if len(lines) >= 2:
-            header = lines[0].strip("`")
-            form_id = lines[1].split(" - ")[0]
-            new_reason = msg.content
-            clip_url = lines[2]
-            updated = f"```{header}
-{form_id} - {new_reason}
-{clip_url}```
-📨 by {member.name}"
-            await message.edit(content=updated)
-            await channel.send("✅ Обновлено.")
+        reply = await bot.wait_for('message', timeout=60.0, check=check)
     except:
-        await channel.send("⏰ Время на редактирование истекло.")
-
-@bot.tree.command(name="nickname", description="Изменить MEDIA_name")
-async def nickname(interaction: discord.Interaction, name: str):
-    if ADMIN_ROLE_ID not in [r.id for r in interaction.user.roles]:
-        await interaction.response.send_message("⛔ Нет доступа", ephemeral=True)
+        await channel.send("Время на ввод истекло.")
         return
-    save_db({"MEDIA_name": name})
-    await interaction.response.send_message(f"✅ MEDIA_name изменено на: {name}", ephemeral=True)
 
-bot.run(os.environ["discord_token"])
+    content = reply.content.strip()
+
+    # Обновляем clip reason в базе по ID, предполагается что ID есть в сообщении
+    # Пример парсинга (надо под твой формат)
+
+    # Для простоты заменим всю причину на новую в сообщении
+    new_content = message.content.split('\n')
+    # Предположим, что вторая строка с формой: form_id - reason
+    if len(new_content) > 1 and '-' in new_content[1]:
+        form_id = new_content[1].split('-')[0].strip()
+        new_content[1] = f"{form_id} - {content}"
+
+        new_message = "\n".join(new_content)
+        await message.edit(content=new_message)
+        await channel.send(f"Причина обновлена на: {content}")
+    else:
+        await channel.send("Не удалось найти строку с причиной для редактирования.")
+
+bot.run(os.environ['DISCORD_TOKEN'])
