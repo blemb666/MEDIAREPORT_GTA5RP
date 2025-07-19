@@ -12,7 +12,7 @@ DISCORD_WEBHOOK_URL = os.environ['webhook_discord']
 CHANNEL_VIEW = os.environ['channel_suspect']
 MEDIA_name = os.environ['MEDIA_name']
 static_member = "<@244135967378767872> <#690851125511061515>"
-role_id = os.environ['role_id']
+role_id = os.environ.get('role_id', '@everyone')  # <-- безопасная загрузка
 
 DB_PATH = 'db.json'
 
