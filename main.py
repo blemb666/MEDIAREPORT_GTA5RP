@@ -1,91 +1,82 @@
 import os
-import asyncio
-from twitchio.ext import commands
 import discord
 from discord.ext import commands as discord_commands
+from twitchio.ext import commands as twitch_commands
 
-# Переменные окружения
-MEDIA_name = os.getenv("MEDIA_name", "BotName")
+MEDIA_name = os.getenv("MEDIA_name", "Unknown Media")
+
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
-CHANNEL_SUSPECT = os.getenv("channel_suspect", "unknown_server")
+DISCORD_CHANNEL_ID = int(os.getenv("DISCORD_CHANNEL_ID", 0))
+TWITCH_TOKEN = os.getenv("token")
+TWITCH_NICK = os.getenv("MEDIA_name")
+TWITCH_CHANNEL = os.getenv("channel_suspect")
+SERVER_NAME = os.getenv("server", "Solana")
 
-# Twitch Bot
-class TwitchBot(commands.Bot):
-    def __init__(self):
-        super().__init__(
-            token=os.getenv("token"),
-            prefix='!',
-            initial_channels=[os.getenv("id")]
-        )
-
-    async def event_ready(self):
-        print(f"Twitch Bot is ready | Logged in as {self.nick}")
-
-    async def event_message(self, message):
-        if message.author and message.author.name.lower() != self.nick.lower():
-            await self.handle_commands(message)
-
-    @commands.command(name="report")
-    async def report(self, ctx: commands.Context):
-        try:
-            args = ctx.message.content.split(" ", 2)
-            if len(args) < 3:
-                await ctx.send(f"{ctx.author.name}, неверный формат. Используй !report <id> <reason>")
-                return
-
-            reported_id = args[1]
-            reason = args[2]
-            report_text = f"{ctx.author.name}\n{reported_id} - {reason}\n{CHANNEL_SUSPECT}"
-            print("Получена жалоба:", report_text)
-
-            # Discord: добавить жалобу в очередь
-            discord_bot.report_queue.append({
-                "title": f"Жалоба #{len(discord_bot.report_queue) + 1}",
-                "description": report_text
-            })
-
-            await ctx.send(f"{ctx.author.name}, жалоба отправлена!")
-
-        except Exception as e:
-            print("Ошибка в команде report:", e)
-            await ctx.send("Произошла ошибка при отправке жалобы.")
-
-# Discord Bot
+# Discord bot setup
 intents = discord.Intents.default()
-intents.message_content = True
+intents.messages = True
+intents.guilds = True
 
 discord_bot = discord_commands.Bot(command_prefix="!", intents=intents)
-discord_bot.report_queue = []
 
 @discord_bot.event
 async def on_ready():
-    print(f"Discord Bot is ready | Logged in as {discord_bot.user}")
-    await discord_bot.change_presence(activity=discord.Game(name=MEDIA_name))
-    # Периодическая отправка отчетов
-    discord_bot.loop.create_task(send_daily_reports())
+    print(f"[Discord] Logged in as {discord_bot.user} (ID: {discord_bot.user.id})")
 
-async def send_daily_reports():
-    await discord_bot.wait_until_ready()
-    while not discord_bot.is_closed():
-        if discord_bot.report_queue:
-            channel = discord.utils.get(discord_bot.get_all_channels(), name="reports")
+# Twitch bot setup
+class TwitchBot(twitch_commands.Bot):
+    def __init__(self):
+        super().__init__(
+            token=TWITCH_TOKEN,
+            prefix="!",
+            initial_channels=[TWITCH_CHANNEL]
+        )
+
+    async def event_ready(self):
+        print(f"[Twitch] Logged in as {self.nick}")
+
+    async def event_message(self, message):
+        if message.echo:
+            return
+        await self.handle_commands(message)
+
+    @twitch_commands.command(name="report")
+    async def report(self, ctx):
+        try:
+            args = ctx.message.content.split()
+            if len(args) < 3:
+                await ctx.send(f"❌ Использование: !report ID причина")
+                return
+
+            player_id = args[1]
+            reason = " ".join(args[2:])
+            nickname = ctx.author.name
+
+            embed = discord.Embed(
+                title=f"Жалоба #{player_id}",
+                description=f"```{nickname}\n{player_id} - {reason}\n{SERVER_NAME}```",
+                color=discord.Color.red()
+            )
+
+            channel = discord_bot.get_channel(DISCORD_CHANNEL_ID)
             if channel:
-                for report in discord_bot.report_queue:
-                    embed = discord.Embed(
-                        title=report["title"],
-                        description=report["description"],
-                        color=discord.Color.red()
-                    )
-                    await channel.send(embed=embed)
-                discord_bot.report_queue.clear()
-        await asyncio.sleep(86400)  # раз в день
+                await channel.send(embed=embed)
+                await ctx.send("✅ Жалоба отправлена.")
+            else:
+                print("[Discord] Канал не найден.")
 
-# Запуск
+        except Exception as e:
+            print(f"[Error] {e}")
+            await ctx.send("❌ Произошла ошибка при отправке жалобы.")
+
+# Запуск ботов
 async def main():
+    import asyncio
     await asyncio.gather(
         discord_bot.start(DISCORD_TOKEN),
         TwitchBot().start()
     )
 
 if __name__ == "__main__":
+    import asyncio
     asyncio.run(main())
