@@ -1,98 +1,69 @@
 import os
 import asyncio
-from twitchio.ext import commands as twitch_commands
+from twitchio.ext import commands
 import discord
-from discord.ext import commands as discord_commands
-from datetime import datetime, timedelta
+from discord import Intents, Embed
 
-# Переменные окружения
-DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
-DISCORD_GUILD_ID = int(os.getenv("DISCORD_GUILD_ID", 0))  # айди сервера для изменения никнейма
-ROLE_ID = int(os.getenv("ROLE_ID", 0))  # айди роли для проверки доступа к команде жалобы
-MEDIA_NAME = os.getenv("MEDIA_name", "MediaReport")
-DISCORD_CHANNEL_ID = int(os.getenv("DISCORD_CHANNEL_ID", 0))  # куда отправлять жалобы
+# Twitch config
 TWITCH_TOKEN = os.getenv("token")
-TWITCH_CHANNEL = os.getenv("id")  # канал для Twitch бота
+CHANNEL_NAME = os.getenv("channel_suspect")
 
-# Discord intents — нужен для доступа к сообщениям и членам сервера
-intents = discord.Intents.default()
-intents.message_content = True
-intents.members = True
+# Discord config
+DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
+DISCORD_CHANNEL_ID = int(os.getenv("id"))
+SERVER_NAME = os.getenv("server_name", "GTA5RP")
 
-# Discord бот
-discord_bot = discord_commands.Bot(command_prefix="!", intents=intents)
+MEDIA_NAME = os.getenv("MEDIA_name", "Unknown")
 
-# Twitch бот
-class TwitchBot(twitch_commands.Bot):
+# Discord bot client
+discord_client = discord.Client(intents=Intents.default())
+
+# Twitch bot
+class Bot(commands.Bot):
     def __init__(self):
-        super().__init__(token=TWITCH_TOKEN, prefix="!", initial_channels=[TWITCH_CHANNEL])
+        super().__init__(token=TWITCH_TOKEN, prefix="!", initial_channels=[CHANNEL_NAME])
 
     async def event_ready(self):
-        print(f"Twitch Bot готов! Logged in as | {self.nick}")
+        print(f"Twitch bot connected as {self.nick}")
 
-    @twitch_commands.command(name="clip")
-    async def clip(self, ctx):
-        await ctx.send(f"Клип от {ctx.author.name} создан!")
+    async def event_message(self, message):
+        await self.handle_commands(message)
 
-# Для учета жалоб
-complaint_count = 0
-complaints_reset_time = datetime.utcnow() + timedelta(days=1)
+    @commands.command(name="report")
+    async def report(self, ctx):
+        try:
+            parts = ctx.message.content.split(maxsplit=2)
+            if len(parts) < 3:
+                await ctx.send("⚠️ Использование: !report {ID} {Причина}")
+                return
 
-@discord_bot.event
-async def on_ready():
-    print(f"Discord Bot готов! Logged in как {discord_bot.user}")
+            report_id = parts[1]
+            reason = parts[2]
 
-async def reset_complaints_daily():
-    global complaint_count, complaints_reset_time
-    while True:
-        now = datetime.utcnow()
-        if now >= complaints_reset_time:
-            complaint_count = 0
-            complaints_reset_time = now + timedelta(days=1)
-            print("Счетчик жалоб сброшен")
-        await asyncio.sleep(60)  # Проверяем каждую минуту
+            content = f"{MEDIA_NAME}\n{report_id} - {reason}\n{SERVER_NAME}"
+            await send_report_to_discord(content)
 
-@discord_bot.command(name="жалоба")
-@discord_commands.has_role(ROLE_ID)
-async def complaint(ctx, *, text: str):
-    global complaint_count
-    complaint_count += 1
+            await ctx.send(f"📩 Жалоба на {report_id} отправлена.")
+        except Exception as e:
+            await ctx.send("❌ Ошибка при отправке жалобы.")
+            print("Error:", e)
 
-    guild = discord_bot.get_guild(DISCORD_GUILD_ID)
-    if guild:
-        member = guild.get_member(ctx.author.id)
-        if member:
-            try:
-                # Добавляем карандаш (✏️) к нику, если его нет
-                if not member.nick or "✏️" not in member.nick:
-                    new_nick = f"{member.nick or member.name} ✏️"
-                    await member.edit(nick=new_nick)
-            except Exception as e:
-                print(f"Ошибка при изменении ника: {e}")
-
-    embed = discord.Embed(
-        title=f"Жалоба #{complaint_count} - {MEDIA_NAME}",
-        description=f"От: {ctx.author.mention}\n\n{text}",
-        color=discord.Color.red(),
-        timestamp=datetime.utcnow()
-    )
-    embed.set_footer(text="MEDIAREPORT")
-    embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url if ctx.author.avatar else None)
-
-    channel = discord_bot.get_channel(DISCORD_CHANNEL_ID)
+# Discord report sender
+async def send_report_to_discord(content):
+    await discord_client.wait_until_ready()
+    channel = discord_client.get_channel(DISCORD_CHANNEL_ID)
     if channel:
+        embed = Embed(title=f"Жалоба", description=content, color=0xff0000)
         await channel.send(embed=embed)
     else:
-        await ctx.send("Ошибка: не найден канал для отправки жалоб.")
-
-    await ctx.message.add_reaction("✅")  # Подтверждение жалобы
+        print("❌ Канал Discord не найден")
 
 async def main():
-    twitch_bot = TwitchBot()
+    twitch_bot = Bot()
+
     await asyncio.gather(
-        twitch_bot.start(),
-        discord_bot.start(DISCORD_TOKEN),
-        reset_complaints_daily()
+        discord_client.start(DISCORD_TOKEN),
+        twitch_bot.start()
     )
 
 if __name__ == "__main__":
