@@ -1,69 +1,112 @@
-import discord
-from discord import app_commands
-from discord.ext import commands
-import json
+import asyncio
+import requests
+from twitchio.ext import commands
 import os
 
-DB_PATH = 'db.json'
-ADMIN_ROLE_ID = 1373048899278995496
+# Переменные среды
+TWITCH_CLIENT_ID = 'p063h8nr6c7i7w8zcn96489x6e26pv'
+TWITCH_ACCESS_TOKEN = os.environ['token']
+BROADCASTER_ID = os.environ['id']
+DISCORD_WEBHOOK_URL = os.environ['webhook_discord']
+CHANNEL_VIEW = os.environ['channel_suspect']
+MEDIA_name = os.environ['MEDIA_name']
+static_member = "<@244135967378767872> <#690851125511061515>"
+rainbow = "<@&697172798845485137> <@&697172317872324648>"
+hawick = "<@&1182947880168861727> <@&1182732063221231616>"
+role_id = os.environ['role_id']
 
-def load_db():
-    if not os.path.exists(DB_PATH):
-        return {}
-    with open(DB_PATH, 'r') as f:
-        return json.load(f)
+class Bot(commands.Bot):
 
-def save_db(data):
-    with open(DB_PATH, 'w') as f:
-        json.dump(data, f, indent=4)
+    def __init__(self):
+        super().__init__(
+            token=TWITCH_ACCESS_TOKEN,
+            prefix='!',
+            initial_channels=[CHANNEL_VIEW]
+        )
 
-intents = discord.Intents.default()
-intents.message_content = True
-intents.guilds = True
+    async def event_ready(self):
+        print(f'✅ Бот запущен как {self.nick}')
+        print(f'Watching channel: {CHANNEL_VIEW}')
 
-bot = commands.Bot(command_prefix="!", intents=intents)
+    async def event_message(self, message):
+        if message.echo or message.author is None:
+            return
+        await self.handle_commands(message)
 
-@bot.event
-async def on_ready():
-    await bot.tree.sync()
-    print(f"✅ Discord бот запущен как {bot.user}")
+    @commands.command(name='report')
+    async def form(self, ctx: commands.Context):
+        content = ctx.message.content.strip()
+        if not content:
+            await ctx.reply("Ошибка: пустое сообщение.")
+            return
 
-@bot.tree.command(name="nickname", description="Изменить MEDIA_name")
-@app_commands.checks.has_role(ADMIN_ROLE_ID)
-@app_commands.describe(name="Новое имя для MEDIA_name")
-async def nickname(interaction: discord.Interaction, name: str):
-    db = load_db()
-    db["MEDIA_name"] = name
-    save_db(db)
-    await interaction.response.send_message(f"✅ MEDIA_name изменено на: `{name}`", ephemeral=True)
+        parts_full = content.split(' ', 1)
+        if len(parts_full) < 2:
+            await ctx.reply("Неверный формат. Используй: !report ид причина")
+            return
 
-@bot.tree.command(name="channel_logs", description="Установить лог-канал для сообщений с Twitch")
-@app_commands.checks.has_role(ADMIN_ROLE_ID)
-@app_commands.describe(channel="Канал для логов")
-async def channel_logs(interaction: discord.Interaction, channel: discord.TextChannel):
-    db = load_db()
-    db["log_channel_id"] = channel.id
-    save_db(db)
-    await interaction.response.send_message(f"📋 Канал логов установлен: {channel.mention}", ephemeral=True)
+        args_str = parts_full[1]
+        arg_parts = args_str.split(' ', 1)
 
-@bot.event
-async def on_raw_reaction_add(payload: discord.RawReactionActionEvent):
-    if str(payload.emoji) == "✏️" and payload.member and ADMIN_ROLE_ID in [role.id for role in payload.member.roles]:
-        channel = bot.get_channel(payload.channel_id)
-        message = await channel.fetch_message(payload.message_id)
+        if len(arg_parts) < 2:
+            await ctx.reply(" blemb6Cop = Ничего не произошло = blemb6Cop")
+            return
 
-        def check(m):
-            return m.author.id == payload.user_id and m.channel.id == payload.channel_id
+        form_id = arg_parts[0]
+        reason = arg_parts[1]
 
-        await channel.send(f"{payload.member.mention}, отправь новое описание (reason):")
+        print(f"Command received from {ctx.author.name}: {ctx.message.content}")
+
+        clip_url = await self.create_clip()
+        if not clip_url:
+            await ctx.reply("❌ Ошибка при создании клипа.")
+            return
+
+        await ctx.reply("blemb6Cop")
+        print(f"Clip URL: {clip_url}")
+
+        messageby = f"-# message by {ctx.author.mention}"
+        discord_content = f"{static_member}\n
+{MEDIA_name}\n{form_id} - {reason}\n{clip_url}\n{role_id}
+\n{messageby}"
 
         try:
-            msg = await bot.wait_for("message", timeout=60.0, check=check)
-            updated_content = message.content.replace("```", "").split("\n")
-            updated_content[2] = f"{updated_content[2].split(' - ')[0]} - {msg.content}"
-            new_message = f"```{chr(10).join(updated_content)}```"
-            await message.edit(content=new_message)
-        except asyncio.TimeoutError:
-            await channel.send("⏰ Время на редактирование истекло.")
+            requests.post(DISCORD_WEBHOOK_URL, json={"content": discord_content})
+            print("Successfully sent webhook to Discord.")
+        except Exception as e:
+            print(f"Ошибка отправки в Discord: {e}")
 
-bot.run(os.environ["discord_token"])
+    async def create_clip(self):
+        url = "https://api.twitch.tv/helix/clips"
+        headers = {
+            "Client-ID": TWITCH_CLIENT_ID,
+            "Authorization": f"Bearer {TWITCH_ACCESS_TOKEN}"
+        }
+        data = {
+            "broadcaster_id": BROADCASTER_ID,
+            "has_delay": True
+        }
+
+        try:
+            response = requests.post(url, headers=headers, json=data)
+            response.raise_for_status()
+
+            if response.status_code == 202:
+                clip_data = response.json().get("data", [])
+                if clip_data and "id" in clip_data[0]:
+                    clip_id = clip_data[0]["id"]
+                    await asyncio.sleep(10)
+                    return f"https://clips.twitch.tv/{clip_id}"
+            else:
+                print(f"Ошибка создания клипа (HTTP {response.status_code}): {response.text}")
+        except requests.exceptions.RequestException as e:
+            print(f"Network or API error when creating clip: {e}")
+        except Exception as e:
+            print(f"Unexpected error when creating clip: {e}")
+
+        return None
+
+# Запуск
+if __name__ == '__main__':
+    bot = Bot()
+    bot.run()
