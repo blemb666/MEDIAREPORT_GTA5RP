@@ -1,7 +1,8 @@
 import asyncio
 import requests
-from twitchio.ext import commands
 import os
+import json
+from twitchio.ext import commands
 
 # Переменные среды
 TWITCH_CLIENT_ID = 'p063h8nr6c7i7w8zcn96489x6e26pv'
@@ -11,9 +12,15 @@ DISCORD_WEBHOOK_URL = os.environ['webhook_discord']
 CHANNEL_VIEW = os.environ['channel_suspect']
 MEDIA_name = os.environ['MEDIA_name']
 static_member = "<@244135967378767872> <#690851125511061515>"
-rainbow = "<@&697172798845485137> <@&697172317872324648>"
-hawick = "<@&1182947880168861727> <@&1182732063221231616>"
 role_id = os.environ['role_id']
+
+DB_PATH = 'db.json'
+
+def load_db():
+    if not os.path.exists(DB_PATH):
+        return {}
+    with open(DB_PATH, 'r') as f:
+        return json.load(f)
 
 class Bot(commands.Bot):
 
@@ -66,13 +73,42 @@ class Bot(commands.Bot):
         print(f"Clip URL: {clip_url}")
 
         messageby = f"-# message by {ctx.author.mention}"
-        discord_content = f"{static_member}\n
-{MEDIA_name}\n{form_id} - {reason}\n{clip_url}\n{role_id}
-\n{messageby}"
+
+        discord_content = (
+            f"{static_member}\n"
+            f"```{MEDIA_name}\n"
+            f"{form_id} - {reason}\n"
+            f"{clip_url}\n"
+            f"{role_id}```\n"
+            f"{messageby}"
+        )
 
         try:
-            requests.post(DISCORD_WEBHOOK_URL, json={"content": discord_content})
-            print("Successfully sent webhook to Discord.")
+            # Основной вебхук (отображение в Discord)
+            res = requests.post(DISCORD_WEBHOOK_URL, json={"content": discord_content})
+            if res.status_code == 204:
+                print("✅ Webhook отправлен в основной канал.")
+
+            # Доп. логгирование в канал (если указан в db.json)
+            db = load_db()
+            if "log_channel_id" in db:
+                log_channel_id = db["log_channel_id"]
+                log_webhook_url = f"https://discord.com/api/v10/channels/{log_channel_id}/messages"
+                log_msg = {
+                    "content": f"📋 Клип от `{ctx.author.name}`: {clip_url}\nID: `{form_id}` — {reason}"
+                }
+
+                headers = {
+                    "Authorization": f"Bot {os.environ['discord_token']}",
+                    "Content-Type": "application/json"
+                }
+
+                r = requests.post(log_webhook_url, headers=headers, json=log_msg)
+                if r.status_code == 200:
+                    print("📥 Лог отправлен в лог-канал.")
+                else:
+                    print(f"⚠️ Не удалось отправить лог: {r.status_code} - {r.text}")
+
         except Exception as e:
             print(f"Ошибка отправки в Discord: {e}")
 
