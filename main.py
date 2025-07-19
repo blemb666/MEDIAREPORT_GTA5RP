@@ -13,6 +13,7 @@ MEDIA_name = os.environ['MEDIA_name']
 static_member = "<@244135967378767872> <#690851125511061515>"
 rainbow = "<@&697172798845485137> <@&697172317872324648>"
 hawick = "<@&1182947880168861727> <@&1182732063221231616>"
+role_id = os.environ['role_id']
 
 class Bot(commands.Bot):
 
@@ -65,7 +66,7 @@ class Bot(commands.Bot):
         print(f"Clip URL: {clip_url}")
 
         messageby = f"-# message by {ctx.author.mention}"
-        discord_content = f"{static_member}\n```{MEDIA_name}\n{form_id} - {reason}\n{clip_url}\n{hawick}```\n{messageby}"
+        discord_content = f"{static_member}\n```{MEDIA_name}\n{form_id} - {reason}\n{clip_url}\n{role_id}```\n{messageby}"
 
         try:
             requests.post(DISCORD_WEBHOOK_URL, json={"content": discord_content})
